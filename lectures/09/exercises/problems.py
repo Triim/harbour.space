@@ -116,7 +116,7 @@ def make_incrementer(start: int = 0) -> Callable[[], int]:
 
 
 def inject_with_exec(namespace: dict[str, object], statement: str) -> dict[str, object]:
-    """Mission 7: inject names dynamically using `exec`.
+    """Mission 7 (Optional): inject names dynamically using `exec`.
 
     Execute `statement` in the provided `namespace` dictionary.
     Return the same dictionary object after execution.
