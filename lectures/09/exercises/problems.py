@@ -143,7 +143,7 @@ def function_locals_snapshot() -> dict[str, int]:
 
 
 def cycle_collected() -> bool:
-    """Mission 9: verify cycle garbage collection.
+    """Mission 9 (Optional): verify cycle garbage collection.
 
     Create two objects that reference each other (a cycle).
     Keep weak references to both objects, delete strong references,
