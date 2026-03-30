@@ -38,13 +38,17 @@ class Countdown:
     """
 
     def __init__(self, n: int) -> None:
-        raise NotImplementedError
+        self.current = n
 
     def __iter__(self) -> Iterator[int]:
-        raise NotImplementedError
+        return self
 
     def __next__(self) -> int:
-        raise NotImplementedError
+        if self.current < 0:
+            raise StopIteration
+        value = self.current
+        self.current -= 1
+        return value
 
 
 class StepIterator:
@@ -62,13 +66,21 @@ class StepIterator:
     """
 
     def __init__(self, values: list[Any], step: int = 2) -> None:
-        raise NotImplementedError
+        if step <= 0:
+            raise ValueError("step must be positive")
+        self.values = values
+        self.step = step
+        self.index = 0
 
     def __iter__(self) -> Iterator[Any]:
-        raise NotImplementedError
+        return self
 
     def __next__(self) -> Any:
-        raise NotImplementedError
+        if self.index >= len(self.values):
+            raise StopIteration
+        value = self.values[self.index]
+        self.index += self.step
+        return value
 
 
 class UniqueConsecutiveIterator:
@@ -82,13 +94,25 @@ class UniqueConsecutiveIterator:
     """
 
     def __init__(self, values: list[Any]) -> None:
-        raise NotImplementedError
+        self.values = values
+        self.index = 0
+        self.has_prev = False
+        self.prev = None
 
     def __iter__(self) -> Iterator[Any]:
-        raise NotImplementedError
+        return self
 
     def __next__(self) -> Any:
-        raise NotImplementedError
+        while self.index < len(self.values):
+            value = self.values[self.index]
+            self.index += 1
+
+            if not self.has_prev or value != self.prev:
+                self.prev = value
+                self.has_prev = True
+                return value
+
+        raise StopIteration
 
 
 class CircularIterator:
@@ -103,13 +127,26 @@ class CircularIterator:
     """
 
     def __init__(self, sequence: Sequence[Any], k: int) -> None:
-        raise NotImplementedError
+        if not sequence:
+            raise ValueError("sequence must not be empty")
+        if k < 0:
+            raise ValueError("k must be non-negative")
+        self.sequence = sequence
+        self.k = k
+        self.index = 0
+        self.produced = 0
 
     def __iter__(self) -> Iterator[Any]:
-        raise NotImplementedError
+        return self
 
     def __next__(self) -> Any:
-        raise NotImplementedError
+        if self.produced >= self.k:
+            raise StopIteration
+
+        value = self.sequence[self.index]
+        self.index = (self.index + 1) % len(self.sequence)
+        self.produced += 1
+        return value
 
 
 class FlattenIterator:
@@ -143,8 +180,10 @@ def read_words(filename: str) -> Iterator[str]:
     >>> list(read_words("sample.txt"))
     ['one', 'two', 'three']
     """
-    raise NotImplementedError
-
+    with open(filename, "r", encoding="utf-8") as f:
+        for line in f:
+            for word in line.split():
+                yield word
 
 def batch(iterable: Iterable[Any], size: int) -> Iterator[list[Any]]:
     """Problem 7. Batch generator.
@@ -156,7 +195,18 @@ def batch(iterable: Iterable[Any], size: int) -> Iterator[list[Any]]:
     >>> list(batch([1, 2, 3, 4, 5, 6, 7], 3))
     [[1, 2, 3], [4, 5, 6], [7]]
     """
-    raise NotImplementedError
+    if size <= 0:
+        raise ValueError("size must be positive")
+
+    current_batch = []
+    for item in iterable:
+        current_batch.append(item)
+        if len(current_batch) == size:
+            yield current_batch
+            current_batch = []
+
+    if current_batch:
+        yield current_batch
 
 
 def flatten(data: list[Any]) -> Iterator[Any]:
@@ -168,7 +218,7 @@ def flatten(data: list[Any]) -> Iterator[Any]:
     >>> list(flatten([1, [2, 3], [4, [5, 6]], 7]))
     [1, 2, 3, 4, 5, 6, 7]
     """
-    raise NotImplementedError
+
 
 
 def log_calls(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -190,7 +240,14 @@ def log_calls(func: Callable[..., Any]) -> Callable[..., Any]:
     add(2, 3) -> 5
     5
     """
-    raise NotImplementedError
+    def wrapper(*args, **kwargs):
+        parts = [repr(arg) for arg in args]
+        parts += [f"{key}={value!r}" for key, value in kwargs.items()]
+        result = func(*args, **kwargs)
+        print(f"{func.__name__}({', '.join(parts)}) -> {result!r}")
+        return result
+
+    return wrapper
 
 
 def measure_time(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -206,7 +263,14 @@ def measure_time(func: Callable[..., Any]) -> Callable[..., Any]:
     >>> work()
     done
     """
-    raise NotImplementedError
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"Executed in {(end - start) * 1000} ms")
+        return result
+
+    return wrapper
 
 
 def count_calls(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -224,7 +288,12 @@ def count_calls(func: Callable[..., Any]) -> Callable[..., Any]:
     >>> ping.calls
     2
     """
-    raise NotImplementedError
+    def wrapper(*args, **kwargs):
+        wrapper.calls += 1
+        return func(*args, **kwargs)
+
+    wrapper.calls = 0
+    return wrapper
 
 
 def ensure_non_negative(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -239,7 +308,13 @@ def ensure_non_negative(func: Callable[..., Any]) -> Callable[..., Any]:
     >>> diff(5, 2)
     3
     """
-    raise NotImplementedError
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        if result < 0:
+            raise ValueError("Negative result")
+        return result
+
+    return wrapper
 
 
 def retry(times: int) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
@@ -253,7 +328,7 @@ def retry(times: int) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     ... def flaky():
     ...     ...
     """
-    raise NotImplementedError
+
 
 
 def lru_cache(maxsize: int) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
@@ -270,4 +345,3 @@ def lru_cache(maxsize: int) -> Callable[[Callable[..., Any]], Callable[..., Any]
     >>> square(2), square(3), square(2)
     (4, 9, 4)
     """
-    raise NotImplementedError
